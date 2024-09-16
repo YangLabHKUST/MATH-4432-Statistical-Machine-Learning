@@ -16,13 +16,11 @@ This course is open to senior undergraduates in applied mathematics, statistics,
 
 For Python:
 
-The source files of the slides are `.ipynb` files. And the corresponding `.html` files are provided. 
+The source files are `.ipynb` files. And the corresponding `.html` files are provided. 
 
 For R:
 
-The source files are `.Rmd` files in the `R version` folders for R. 
-
-If you are interested in how to create slides through R Markdown, you can have a look at them.
+The source files of the slides are `.Rmd` files in the `R version` folders for R. If you are interested in how to create slides through R Markdown, you can have a look at them.
 
 To get a full view of the slides, I recommend you open the `.html` files (e.g., [BiasVar.html](https://github.com/YangLabHKUST/MATH-4432-Statistical-Machine-Learning/blob/main/T02_Bias%20Variance%20Tradeoff/T02_R%20version/BiasVar.html)) with your browser after downloading the entire repository. Typically this works best in Chrome.
 
