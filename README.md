@@ -6,13 +6,13 @@ MATH 4432 Statistical Machine Learning
 
 Instructor: Prof. YANG Can
 
-Teaching assistants: HUANG Xinrui (xhuangcn@connect.ust.hk), CHEN Yuheng (ychenlp@connect.ust.hk)
+Teaching assistants: CHEN Yuheng (ychenlp@connect.ust.hk), LIU Yuyao (yliuow@connect.ust.hk)
 
 This course is open to senior undergraduates in applied mathematics, statistics, and engineering who are interested in learning from data. It covers hot topics in statistical learning, also known as machine learning, featured with various applications.
 
 ## Tutorial files
 
-* T02
+* T02 (Currently not published)
 
 For Python:
 
