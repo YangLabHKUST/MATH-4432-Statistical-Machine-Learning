@@ -12,7 +12,7 @@ This course is open to senior undergraduates in applied mathematics, statistics,
 
 ## Tutorial files
 
-* T02 (Currently not published)
+* T02
 
 For Python:
 
