@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>T04: Outliers and l_1 loss</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="WANG Zhiwei" />
+    <meta name="date" content="2022-09-27" />
+    <script src="libs/header-attrs-2.16/header-attrs.js"></script>
+    <link href="libs/panelset-0.2.6/panelset.css" rel="stylesheet" />
+    <script src="libs/panelset-0.2.6/panelset.js"></script>
+    <link rel="stylesheet" href="xaringan-themer.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# T04: Outliers and <span class="math inline"><em>l</em><sub>1</sub></span> loss
+]
+.subtitle[
+## MATH 4432 Statistical Machine Learning
+]
+.author[
+### WANG Zhiwei
+]
+.institute[
+### MATH, HKUST
+]
+.date[
+### 2022-09-27
+]
+
+---
+
+
+
+
+
+
+
+
+
+
+class: inverse, center, middle
+
+# Let's start by recalling linear regression!
+
+---
+
+## Least squares
+
+Recall the least squares (LS) problem for linear regression
+`$$\hat{\beta} = \underset{\mathbf{\beta}}{\operatorname{argmin}} \sum_{i = 1}^{N} (y_i - x_i^T \beta)^2 = \underset{\mathbf{\beta}}{\operatorname{argmin}} \frac{1}{N}\sum_{i = 1}^{N} (y_i - x_i^T \beta)^2.$$`
+.panelset[
+
+.panel[.panel-name[A toy example]
+
+- Suppose we know the ground truth of `\(f(\cdot):f(x)=x\)`
+
+- Now given `\(\{x_i\}_{i=1}^N\)`, we have a set of observations `\(\mathcal{D}=\{(x_i,y_i)\}_{i=1}^N\)` with `$$y_i=f(x_i) + \epsilon_i,$$` where `\(\epsilon_i \stackrel{\text { i.i.d. }}{\sim} \mathcal{N}(0,0.1^2)\)` is random noise.
+
+.panel[.panel-name[Code]
+
+```r
+set.seed(123)
+N &lt;- 10 # Sample size
+x &lt;- runif(N, 0, 1)
+y0 &lt;- x # Ground truth
+y_obs &lt;- y0 + rnorm(N, mean = 0, sd = 0.1) # Add noise, observed data
+ggplot(data = NULL, aes(x = x, y = y_obs)) +
+  geom_point(aes(x = x, y = y_obs), size = 5) +
+  geom_smooth(method = "lm", size = 2) +
+  ylab("y") +
+  theme(
+    text = element_text(size = 20),
+    axis.text.y = element_text(size = 20),
+    axis.text.x = element_text(size = 20)
+    )
+```
+
+
+
+]
+
+.panel[.panel-name[Minimize the squared loss]
+
+&lt;img src="l1_files/figure-html/unnamed-chunk-2-1.png" width="40%" style="display: block; margin: auto;" /&gt;
+
+]
+
+]
+
+]
+
+---
+class: inverse, center, middle
+
+# What if there exists an outlier?
+
+---
+
+## Add an outlier
+
+.panelset[
+
+.panel[.panel-name[Add an outlier]
+
+- We follow the above problem setting.
+
+- But add an outlier 
+`$$(x, y, y_{\text{obs}}) = (0.9, 0.9, -2),$$`
+of which the noise is extremely large.
+This situation is rare, but the probability is not zero!
+
+.panel[.panel-name[Code]
+
+```r
+x_ol &lt;- c(x, 0.9)
+y0_ol &lt;- c(y0, 0.9)
+y_obs_ol &lt;- c(y_obs, -2)
+
+ggplot(data = NULL) +
+  geom_point(aes(x = x, y = y_obs), size = 5) +
+  geom_point(aes(x = 0.9, y = -2), color = "red", size = 5) +
+  geom_smooth(aes(x = x, y = y_obs), method = "lm", color = "blue", size = 2) +
+  geom_smooth(aes(x = x_ol, y = y_obs_ol), method = "lm", color = "red", size = 2) +
+  ylab("y") +
+  theme(
+    text = element_text(size = 20),
+    axis.text.y = element_text(size = 20),
+    axis.text.x = element_text(size = 20)
+    )
+```
+
+
+
+]
+
+.panel[.panel-name[Minimize the squared loss]
+
+&lt;img src="l1_files/figure-html/unnamed-chunk-3-1.png" width="50%" style="display: block; margin: auto;" /&gt;
+
+]
+
+]
+
+]
+
+---
+
+## Brief summary of squared loss
+
+Pros
+
+- Natural, intuitive (Euclidean distance)
+
+- Closed form solution
+
+Con
+
+- Not robust to outliers, equal weights to all data (assumes Gaussian distributed residual)
+
+---
+class: inverse, center, middle
+
+# Let's consider a more robust loss function!
+
+---
+
+## `\(l_1\)` loss
+
+- `\(l_2\)` norm and `\(l_1\)` norm
+`$$||x||_2 = \left( \sum_{j = 1}^{p} x_j^2\right)^{\frac{1}{2}}, \quad ||x||_1 = \sum_{j = 1}^{p} |x_j|.$$`
+
+- `\(l_2\)` loss and `\(l_1\)` loss
+`$$\mathcal{L}_2 = \sum_{i = 1}^{N} (y_i - x_i^T \beta)^2 = ||y - X \beta||_2^2, \\
+\mathcal{L}_1 = \sum_{i = 1}^{N} |y_i - x_i^T \beta| = ||y - X \beta||_1.$$`
+
+---
+
+## Why is `\(l_1\)` more robust?
+
+&lt;img src="l1_files/figure-html/unnamed-chunk-4-1.png" width="55%" style="display: block; margin: auto;" /&gt;
+
+--
+
+However, the bad news is that `\(l_1\)` loss function is not differentiable :(
+
+---
+class: inverse, center, middle
+
+# Let's relax it!
+
+---
+
+## MM algorithm &lt;sup&gt;*&lt;/sup&gt;
+
+The "MM" stands for “Majorization-Minimization” or “Minorization-Maximization”.
+In the following, "MM" refers to "Majorization-Minimization".
+
+- Consider the following presumably difficult optimization problem
+`$$\underset{\mathbf{x}}{\operatorname{minimize}} f(\mathbf{x}) \\
+\text{ subject to } \mathbf{x} \in \mathcal{X},$$`
+with `\(\mathcal{X}\)` being the feasible set and `\(f(\mathbf{x})\)` being continuous.
+- Idea: successively minimize a more managable surrogate function `\(u\left(\mathbf{x}, \mathbf{x}^k\right)\)`
+$$
+\mathbf{x}^{k+1}=\arg \min _{\mathbf{x} \in \mathcal{X}} u\left(\mathbf{x}, \mathbf{x}^k\right),
+$$
+hoping the sequence of minimizers `\(\left\{\mathbf{x}^k\right\}\)` will converge to optimal `\(\mathbf{x}^{\star}\)`.
+
+.footnote[
+[*] Not required in this course. Materials are form ELEC 5470 / IEDA 6100A Convex Optimization, Prof. Daniel P. Palomar, ECE, HKUST.
+]
+
+---
+
+## Iterative algorithm
+
+Suppose `\(x_0\)` is the initial point, in `\(k\)`-th step, we want `\(x_{k-1} \rightarrow x_{k}\)`.
+
+.panelset[
+
+.panel[.panel-name[After k-th step]
+
+&lt;img src="mm_k.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+]
+
+.panel[.panel-name[(k+1)-th step]
+
+&lt;img src="mm_k1.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+]
+
+.panel[.panel-name[(k+2)-th step]
+
+&lt;img src="mm_k2.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+]
+
+]
+
+---
+
+## Construction rule of the surrogate / majorizer function &lt;sup&gt;*&lt;/sup&gt;
+
+`$$u(\mathbf{y}, \mathbf{y})=f(\mathbf{y}), \forall \mathbf{y} \in \mathcal{X} \\
+u(\mathbf{x}, \mathbf{y}) \geq f(\mathbf{x}), \forall \mathbf{x}, \mathbf{y} \in \mathcal{X} \\
+\left.u^{\prime}(\mathbf{x}, \mathbf{y} ; \mathbf{d})\right|_{\mathbf{x}=\mathbf{y}}=f^{\prime}(\mathbf{y} ; \mathbf{d}), \forall \mathbf{d} \text { with } \mathbf{y}+\mathbf{d} \in \mathcal{X} \\
+u(\mathbf{x}, \mathbf{y}) \text { is continuous in } \mathbf{x} \text { and } \mathbf{y}$$`
+
+&lt;img src="mm_k2.png" width="60%" style="display: block; margin: auto;" /&gt;
+
+---
+class: inverse, center, middle
+
+### Question: how to construct `\(u\left(\mathbf{x}, \mathbf{x}^k\right)\)` ?
+
+--
+
+### Answer: that's more like an art :)
+
+--
+
+### Luckily, the MM algorithm for `\(l_1\)`-norm minimization has been well established!
+
+---
+
+## Majorizer for `\(l_1\)`-norm
+
+- Consider the following quadratic majorizer of `\(f(t)=|t|\)` for `\(t \neq 0\)` (for simplicity we ignore this case)
+$$
+u\left(t, t^k\right)=\frac{1}{2\left|t^k\right|}\left(t^2+\left(t^k\right)^2\right) .
+$$
+
+- It is a valid majorizer since it is continuous, and
+`$$u\left(t, t^k\right) \geq f(t),$$`
+`$$u\left(t^k, t^k\right)=f(t),$$` 
+`$$\frac{d}{d t} u\left(t^k, t^k\right)=\frac{d}{d t} f\left(t^k\right).$$`
+
+---
+
+## Majorizer for `\(l_1\)`-norm
+
+&lt;img src="l1_files/figure-html/unnamed-chunk-9-1.png" width="60%" style="display: block; margin: auto;" /&gt;
+
+---
+
+## Reweighted LS for `\(l_1\)`-norm minimization
+
+- Now we can apply it to the `\(\ell_1\)`-norm: a quadratic majorizer of `\(f(\beta) = \|X \beta - y\|_1\)` is
+$$
+u \left(\beta, \beta^k\right) = \sum_{i=1}^N \frac{1}{2 \left| \left[ X \beta^ { k } - y \right]_i \right| } \left( [X \beta - y]_i^2 + \left( \left[ X \beta^ { k } - y \right]_i \right)^2 \right).
+$$
+
+--
+
+- Now that we have the majorizer, we can write the MM iterative algorithm for `\(k=0,1, \ldots\)` as
+$$
+\underset{\beta}{\operatorname{minimize}} ||(X \beta - y) \odot w^k ||_2^2,
+$$
+where `\(w_i^k = \sqrt{\frac{1}{2\left|\left[ X \beta^ { k } - y \right]_i \right|}}\)`.
+
+---
+
+## Algorithm
+
+- Set `\(k = 0\)` and initialize with a feasible point `\(\beta^0\)`
+
+- **repeat**
+  
+  - `\(w_i^k \leftarrow \sqrt{\frac{1}{2\left|\left[ X \beta^ { k } - y \right]_i \right|}}\)`
+  
+  - Update `\(\beta^{k+1} \leftarrow \underset{\beta}{\operatorname{argmin}} \left\|(X \beta - y) \odot w^k \right\|_2^2\)`
+  
+  - `\(k \leftarrow k + 1\)`
+  
+- **until** convergence
+
+- **return** `\(\beta^k\)`
+
+---
+
+## Implementation (first 4 steps)
+
+.panelset[
+
+.panel[.panel-name[Initialization]
+
+```r
+df &lt;- data.frame(y = y_obs_ol, x = x_ol, weight = rep(0, length(x_ol))) # Data
+
+#beta_0 &lt;- rnorm(1) # Initialize intercept
+#beta_1 &lt;- rnorm(1) # Initialize slope
+beta_0 &lt;- -3 # To demonstrate, we fit beta_0 = -3
+beta_1 &lt;- 1 # To demonstrate, we fit beta_1 = 1
+```
+
+]
+
+.panel[.panel-name[lm()]
+
+```r
+opar &lt;- par()
+par(mfrow = c(2, 2))
+
+for (k in 0:3) { # Here we only repeat 4 times
+  fit_l1 &lt;- lm(y ~ x, data = df, weights = sqrt(1 / 2 / abs(beta_0 + x * beta_1 - y))) # Reweighted LS for l1 norm minimization
+  
+  beta_0 &lt;- coef(fit_l1)[1] # Update intercept
+  beta_1 &lt;- coef(fit_l1)[2] # Update slope
+  
+  # Visualize
+  plot(x_ol, y_obs_ol, pch = 16, 
+       xlab = "x", ylab = "y", 
+       cex = 1.5, cex.axis = 1.5, cex.lab = 1.5)
+  abline(fit_l1, col = "blue", lwd = 3, 
+         cex = 1.5, cex.axis = 1.5, cex.lab = 1.5)
+}
+```
+
+]
+
+.panel[.panel-name[geom_smooth()]
+
+```r
+p_list &lt;- list() # Figure list
+for (k in c(1:4)) { # Here we only repeat 4 times
+  df$weight &lt;- sqrt(1 / 2 / abs(beta_0 + x_ol * beta_1 - y_obs_ol))
+  fit_l1 &lt;- lm(y ~ x, data = df, weights = weight) # Reweighted LS for l1 norm minimization
+  beta_0 &lt;- coef(fit_l1)[1] # Update intercept
+  beta_1 &lt;- coef(fit_l1)[2] # Update slope
+  p &lt;- ggplot(df, aes(x = x, y = y, size = weight / 3)) +
+    geom_point(shape = 16) +
+    geom_smooth(method = "lm", aes(weight = weight), size = 1.5, show.legend = FALSE) +
+    theme(
+      text = element_text(size = 18),
+      legend.title = element_text(size = 12),
+      legend.text = element_text(size = 11),
+      legend.position = "bottom"
+    )
+  p_list &lt;- c(p_list, list(p))
+}
+```
+
+]
+
+.panel[.panel-name[ggplot]
+&lt;img src="l1_files/figure-html/unnamed-chunk-13-1.png" width="55%" style="display: block; margin: auto;" /&gt;
+
+]
+
+]
+
+---
+
+## Full implementation
+
+.panelset[
+
+.panel[.panel-name[Initialization and parameter setting]
+
+```r
+df &lt;- data.frame(y = y_obs_ol, x = x_ol, weight = rep(0, length(x_ol))) # Data
+
+#beta_0 &lt;- rnorm(1) # Initialize intercept
+#beta_1 &lt;- rnorm(1) # Initialize slope
+beta_0 &lt;- -3 # To demonstrate, we fit beta_0 = -3
+beta_1 &lt;- 1 # To demonstrate, we fit beta_1 = 1
+
+tol &lt;- 1e-6 # Convergence tolerance / criterion
+iter_max &lt;- 5000 # Maximum number of iterations
+```
+
+]
+
+.panel[.panel-name[l1 norm minimization]
+
+```r
+l1_loss &lt;- sum(abs(beta_0 + x_ol * beta_1 - y_obs_ol)) # l1 loss at initial point
+for (k in 1:iter_max) {
+  df$weight &lt;- sqrt(1 / 2 / abs(beta_0 + x_ol * beta_1 - y_obs_ol))
+  fit_l1 &lt;- lm(y ~ x, data = df, weights = weight) # Reweighted LS for l1 norm minimization
+  beta_0 &lt;- coef(fit_l1)[1] # Update intercept
+  beta_1 &lt;- coef(fit_l1)[2] # Update slope
+  
+  l1_loss_current &lt;- sum(abs(beta_0 + x_ol * beta_1 - y_obs_ol)) # l1 loss in the current step
+  l1_loss &lt;- c(l1_loss, l1_loss_current)
+  
+  # Whether converges
+  if(abs((l1_loss[k + 1] - l1_loss[k]) / l1_loss[k]) &lt; tol){
+    break
+  }
+}
+```
+
+]
+
+.panel[.panel-name[Visualization]
+&lt;img src="l1_files/figure-html/unnamed-chunk-16-1.png" width="55%" style="display: block; margin: auto;" /&gt;
+
+]
+
+]
+
+---
+
+## Subgradient method &lt;sup&gt;*&lt;/sup&gt;
+
+We say a vector `\(g \in \mathbf{R}^n\)` is a subgradient of `\(f: \mathbf{R}^n \rightarrow \mathbf{R}\)` at `\(x \in \operatorname{dom} f\)` if for all `\(z \in \operatorname{dom} f\)`,
+$$
+f(z) \geq f(x)+g^T(z-x).
+$$
+
+The subgradient of `\(l_1\)`-norm can be taken as
+`$$g_i= 
+\begin{equation}
+\begin{cases}+1 &amp; x_i&gt;0 \\ 
+-1 &amp; x_i&lt;0 \\ 
+0 &amp; x_i=0\end{cases}
+\end{equation}.$$`
+
+--
+
+**Note**: subgradient method is **not** a descent method, and negative subgradient is **not** always a descent direction!
+
+.footnote[
+[*] Materials are from [Subgradients](https://see.stanford.edu/materials/lsocoee364b/01-subgradients_notes.pdf) and [Subgradient Methods](https://web.stanford.edu/class/ee392o/subgrad_method.pdf), EE364b, Stephen Boyd and Lieven Vandenberghe, Stanford University.
+]
+
+---
+
+## Implementation
+
+.panelset[
+
+.panel[.panel-name[Initialization and parameter setting]
+
+```r
+#beta_0 &lt;- rnorm(1) # Initialize intercept
+#beta_1 &lt;- rnorm(1) # Initialize slope
+beta_0 &lt;- -3 # To demonstrate, we fit beta_0 = -3
+beta_1 &lt;- 1 # To demonstrate, we fit beta_1 = 1
+beta &lt;- c(beta_0 = beta_0, beta_1 = beta_1)
+
+X &lt;- cbind(x0 = rep(1, length(x_ol)), x1 = x_ol)
+l1_loss &lt;- sum(abs(beta[1] + x_ol * beta[2] - y_obs_ol)) # l1 loss at initial point
+
+step_size &lt;- 0.05 # Try different step size, e.g., 0.1 and 0.01, and see what will happen!
+tol &lt;- 1e-3 # Convergence tolerance / criterion
+iter_max &lt;- 5000 # Maximum number of iterations
+```
+]
+
+.panel[.panel-name[Implementation]
+
+```r
+for (k in 1:iter_max) {
+  r &lt;- as.vector(y_obs_ol - X %*% as.matrix(c(beta))) # Residual
+  subgrad &lt;- colSums(X * sign(r)) # Subgradient
+  
+  beta &lt;- beta + step_size * subgrad # Update beta
+
+  l1_loss_current &lt;- sum(abs(beta[1] + x_ol * beta[2] - y_obs_ol)) # l1 loss in the current step
+  l1_loss &lt;- c(l1_loss, l1_loss_current)
+  
+  # Whether converges
+  if(abs((l1_loss[k + 1] - l1_loss[k]) / l1_loss[k]) &lt; tol){
+    break
+  }
+}
+```
+
+]
+
+.panel[.panel-name[Visualization]
+&lt;img src="l1_files/figure-html/unnamed-chunk-19-1.png" width="55%" style="display: block; margin: auto;" /&gt;
+
+]
+
+]
+
+---
+class: inverse, center, middle
+
+# Good night!
+
+Slides created via Yihui Xie's R package [**xaringan**](https://github.com/yihui/xaringan).
+
+Theme customized via Garrick Aden-Buie's R package [**xaringanthemer**](https://github.com/gadenbuie/xaringanthemer).
+
+Tabbed panels created via Garrick Aden-Buie's R package [**xaringanExtra**](https://github.com/gadenbuie/xaringanExtra/).
+
+The chakra comes from [remark.js](https://remarkjs.com), [**knitr**](https://yihui.org/knitr/), and [R Markdown](https://rmarkdown.rstudio.com).
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
